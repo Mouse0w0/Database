@@ -69,8 +69,10 @@ public class MySql implements Database {
 
 	@Override
 	public boolean hasSchema(String schema) throws SQLException {
-		// TODO 自动生成的方法存根
-		return false;
+		try (PreparedStatement statement = prepareStatement("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='?'")) {
+			statement.setString(0, schema);
+			return statement.execute();
+		}
 	}
 
 	@Override
@@ -98,28 +100,33 @@ public class MySql implements Database {
 
 	@Override
 	public Table createTable(String schema, String table, Column... columns) throws SQLException {
-		return tables.computeIfAbsent(schema + "." + table, (key) -> new SimpleTable(this, key));
+		return getTable(schema, table);
 	}
 
 	@Override
-	public boolean hasTable(String name) throws SQLException {
+	public boolean hasTable(String table) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean hasTable(String schema, String name) throws SQLException {
-		// TODO 自动生成的方法存根
-		return false;
+	public boolean hasTable(String schema, String table) throws SQLException {
+		try (PreparedStatement statement = prepareStatement("SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='?' AND TABLE_NAME='?'")) {
+			statement.setString(0, schema);
+			statement.setString(1, table);
+			return statement.execute();
+		}
 	}
 
 	@Override
-	public Table deleteTable(String table) throws SQLException {
+	public boolean deleteTable(String table) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Table deleteTable(String schema, String table) throws SQLException {
-		// TODO 自动生成的方法存根
-		return null;
+	public boolean deleteTable(String schema, String table) throws SQLException {
+		try (PreparedStatement statement = prepareStatement("DROP TABLE ?")) {
+			statement.setString(0, schema);
+			return statement.execute();
+		}
 	}
 }

@@ -27,13 +27,13 @@ public interface Database {
 	
 	Table createTable(String schema, String table, Column... columns) throws SQLException;
 	
-	boolean hasTable(String name) throws SQLException;
+	boolean hasTable(String table) throws SQLException;
 	
-	boolean hasTable(String schema, String name) throws SQLException;
+	boolean hasTable(String schema, String table) throws SQLException;
 	
-	Table deleteTable(String table) throws SQLException;
+	boolean deleteTable(String table) throws SQLException;
 	
-	Table deleteTable(String schema, String table) throws SQLException;
+	boolean deleteTable(String schema, String table) throws SQLException;
 	
 	Statement createStatement() throws SQLException;
 	
