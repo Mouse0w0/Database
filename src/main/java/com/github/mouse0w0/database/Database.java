@@ -1,17 +1,34 @@
 package com.github.mouse0w0.database;
 
-import java.sql.CallableStatement;
-import java.sql.PreparedStatement;
+import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.function.Consumer;
 
 public interface Database {
 	
 	String getDatabaseType();
 	
-	boolean isConnected() throws SQLException;
+	boolean isConnected();
 	
 	void disconnect() throws SQLException;
+	
+	void disconnectOnComplete() throws SQLException;
+	
+	/**
+	 * @throws InterruptedException 
+	 * @throws  
+	 * @see Database#freeConnection(Connection)
+	 */
+	Connection getConnection() throws SQLException;
+	
+	/**
+	 * @see Database#getConnection()
+	 */
+	void freeConnection(Connection connection);
+	
+	void sync(Consumer<Connection> consumer) throws SQLException;
+	
+	void async(Consumer<Connection> consumer) throws SQLException;
 	
 	boolean createSchema(String schema) throws SQLException;
 	
@@ -34,10 +51,4 @@ public interface Database {
 	boolean deleteTable(String table) throws SQLException;
 	
 	boolean deleteTable(String schema, String table) throws SQLException;
-	
-	Statement createStatement() throws SQLException;
-	
-	PreparedStatement prepareStatement(String sql) throws SQLException;
-	
-	CallableStatement prepareCall(String sql) throws SQLException;
 }
