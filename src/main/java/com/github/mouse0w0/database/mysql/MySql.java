@@ -25,6 +25,11 @@ public class MySql extends DatabaseBase {
 	private final Map<String, Table> tables = Collections.synchronizedMap(new HashMap<>());
 	
 	private MySql(String url, String user, String password) {
+		this(url, user, password, -1);
+	}
+	
+	private MySql(String url, String user, String password, int maxConnectionPoolSize) {
+		super(maxConnectionPoolSize);
 		this.url = url;
 		this.user = user;
 		this.password = password;

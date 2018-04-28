@@ -15,7 +15,7 @@ import com.github.mouse0w0.database.Database;
 public abstract class DatabaseBase implements Database {
 
 	private final Map<Connection, Boolean> connections = new HashMap<>();;
-	private final int maxConnectionCount;
+	private final int maxConnectionPoolSize;
 
 	private ExecutorService threadPool;
 	private volatile boolean disconnected = false;
@@ -24,8 +24,8 @@ public abstract class DatabaseBase implements Database {
 		this(-1);
 	}
 
-	public DatabaseBase(int connectionCount) {
-		this.maxConnectionCount = connectionCount;
+	public DatabaseBase(int maxConnectionPoolSize) {
+		this.maxConnectionPoolSize = maxConnectionPoolSize;
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public abstract class DatabaseBase implements Database {
 					}
 				}
 
-				if (maxConnectionCount < 0 || connections.size() < maxConnectionCount) {
+				if (maxConnectionPoolSize < 0 || connections.size() < maxConnectionPoolSize) {
 					Connection connection = createConnection();
 					connections.put(connection, Boolean.FALSE);
 					return connection;
@@ -127,8 +127,8 @@ public abstract class DatabaseBase implements Database {
 
 	protected void asyncTask(Runnable runnable) {
 		if (threadPool == null)
-			threadPool = maxConnectionCount < 0 ? Executors.newCachedThreadPool()
-					: Executors.newFixedThreadPool(maxConnectionCount);
+			threadPool = maxConnectionPoolSize < 0 ? Executors.newCachedThreadPool()
+					: Executors.newFixedThreadPool(maxConnectionPoolSize);
 		threadPool.execute(runnable);
 	}
 
