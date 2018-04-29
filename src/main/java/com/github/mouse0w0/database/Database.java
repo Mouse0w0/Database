@@ -15,40 +15,34 @@ public interface Database {
 	void disconnectOnComplete() throws SQLException;
 	
 	/**
-	 * @throws InterruptedException 
-	 * @throws  
 	 * @see Database#freeConnection(Connection)
 	 */
-	Connection getConnection() throws SQLException;
+	Connection getConnection() throws SQLException, InterruptedException;
 	
 	/**
 	 * @see Database#getConnection()
 	 */
 	void freeConnection(Connection connection);
 	
-	void sync(Consumer<Connection> consumer) throws SQLException;
+	void sync(Consumer<Connection> consumer) throws SQLException, InterruptedException;
 	
 	void async(Consumer<Connection> consumer) throws SQLException;
 	
-	boolean createSchema(String schema) throws SQLException;
+	boolean createSchema(String schema) throws SQLException, InterruptedException;
 	
-	boolean hasSchema(String schema) throws SQLException;
+	boolean hasSchema(String schema) throws SQLException, InterruptedException;
 	
-	boolean deleteSchema(String schema) throws SQLException;
+	boolean deleteSchema(String schema) throws SQLException, InterruptedException;
 	
-	Table getTable(String table) throws SQLException;
+	boolean createTable(String table, Column... columns) throws SQLException, InterruptedException;
 	
-	Table getTable(String schema, String table) throws SQLException;
+	boolean createTable(String schema, String table, Column... columns) throws SQLException, InterruptedException;
 	
-	Table createTable(String table, Column... columns) throws SQLException;
+	boolean hasTable(String table) throws SQLException, InterruptedException;
 	
-	Table createTable(String schema, String table, Column... columns) throws SQLException;
+	boolean hasTable(String schema, String table) throws SQLException, InterruptedException;
 	
-	boolean hasTable(String table) throws SQLException;
+	boolean deleteTable(String table) throws SQLException, InterruptedException;
 	
-	boolean hasTable(String schema, String table) throws SQLException;
-	
-	boolean deleteTable(String table) throws SQLException;
-	
-	boolean deleteTable(String schema, String table) throws SQLException;
+	boolean deleteTable(String schema, String table) throws SQLException, InterruptedException;
 }

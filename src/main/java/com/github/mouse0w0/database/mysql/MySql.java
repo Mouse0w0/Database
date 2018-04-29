@@ -1,20 +1,14 @@
 package com.github.mouse0w0.database.mysql;
 
 import java.sql.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.github.mouse0w0.database.Column;
-import com.github.mouse0w0.database.Table;
 import com.github.mouse0w0.database.internal.DatabaseBase;
-import com.github.mouse0w0.database.internal.SimpleTable;
-import com.github.mouse0w0.database.util.SQLUtils;
+import com.github.mouse0w0.database.util.DatabaseUtils;
 
 public class MySql extends DatabaseBase {
 	
 	public static MySql create(String url, String user, String password) throws SQLException {
-		SQLUtils.requireDriver("com.mysql.jdbc.Driver");
+		DatabaseUtils.requireDriver("com.mysql.jdbc.Driver");
 		return new MySql(url, user, password);
 	}
 	
@@ -22,14 +16,12 @@ public class MySql extends DatabaseBase {
 	private final String user;
 	private final String password;
 	
-	private final Map<String, Table> tables = Collections.synchronizedMap(new HashMap<>());
-	
-	private MySql(String url, String user, String password) {
+	public MySql(String url, String user, String password) {
 		this(url, user, password, -1);
 	}
 	
-	private MySql(String url, String user, String password, int maxConnectionPoolSize) {
-		super(maxConnectionPoolSize);
+	public MySql(String url, String user, String password, int maxPoolSize) {
+		super(maxPoolSize);
 		this.url = url;
 		this.user = user;
 		this.password = password;
@@ -46,7 +38,7 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public boolean createSchema(String schema) throws SQLException {
+	public boolean createSchema(String schema) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("CREATE DATABASE ?")) {
 			statement.setString(0, schema);
@@ -57,7 +49,7 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public boolean hasSchema(String schema) throws SQLException {
+	public boolean hasSchema(String schema) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='?'")) {
 			statement.setString(0, schema);
@@ -68,7 +60,7 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public boolean deleteSchema(String schema) throws SQLException {
+	public boolean deleteSchema(String schema) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("DROP DATABASE ?")) {
 			statement.setString(0, schema);
@@ -79,30 +71,20 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public Table getTable(String table) throws SQLException {
+	public boolean createTable(String table, Column... columns) throws SQLException {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Table getTable(String schema, String table) throws SQLException {
-		return tables.computeIfAbsent(schema + "." + table, (key) -> new SimpleTable(this, key));
-	}
-
-	@Override
-	public Table createTable(String table, Column... columns) throws SQLException {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Table createTable(String schema, String table, Column... columns) throws SQLException {
+	public boolean createTable(String schema, String table, Column... columns) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS ? (?)")) {
 			statement.setString(0, schema + "." + table);
-			statement.execute();
+			statement.setString(1, ""); // TODO
+			return statement.execute();
 		} finally {
 			freeConnection(connection);
 		}
-		return getTable(schema, table);
 	}
 
 	@Override
@@ -111,7 +93,7 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public boolean hasTable(String schema, String table) throws SQLException {
+	public boolean hasTable(String schema, String table) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("SELECT TABLE_SCHEMA, TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='?' AND TABLE_NAME='?'")) {
 			statement.setString(0, schema);
@@ -128,7 +110,7 @@ public class MySql extends DatabaseBase {
 	}
 
 	@Override
-	public boolean deleteTable(String schema, String table) throws SQLException {
+	public boolean deleteTable(String schema, String table) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("DROP TABLE ?")) {
 			statement.setString(0, schema);

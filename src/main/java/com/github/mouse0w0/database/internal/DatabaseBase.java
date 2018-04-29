@@ -15,7 +15,7 @@ import com.github.mouse0w0.database.Database;
 public abstract class DatabaseBase implements Database {
 
 	private final Map<Connection, Boolean> connections = new HashMap<>();;
-	private final int maxConnectionPoolSize;
+	private final int maxPoolSize;
 
 	private ExecutorService threadPool;
 	private volatile boolean disconnected = false;
@@ -24,8 +24,8 @@ public abstract class DatabaseBase implements Database {
 		this(-1);
 	}
 
-	public DatabaseBase(int maxConnectionPoolSize) {
-		this.maxConnectionPoolSize = maxConnectionPoolSize;
+	public DatabaseBase(int maxPoolSize) {
+		this.maxPoolSize = maxPoolSize;
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public abstract class DatabaseBase implements Database {
 	}
 
 	@Override
-	public Connection getConnection() throws SQLException {
+	public Connection getConnection() throws SQLException, InterruptedException {
 		checkDisconnected();
 		Object lock = getLockObject();
 		synchronized (lock) {
@@ -71,21 +71,21 @@ public abstract class DatabaseBase implements Database {
 				for (Entry<Connection, Boolean> entry : connections.entrySet()) {
 					if (entry.getValue()) {
 						Connection connection = entry.getKey();
+						if(connection.isClosed()) {
+							connection = createConnection();
+						}
 						connections.put(connection, Boolean.FALSE);
 						return connection;
 					}
 				}
 
-				if (maxConnectionPoolSize < 0 || connections.size() < maxConnectionPoolSize) {
+				if (maxPoolSize < 0 || connections.size() < maxPoolSize) {
 					Connection connection = createConnection();
 					connections.put(connection, Boolean.FALSE);
 					return connection;
 				}
 				
-				try {
-					lock.wait();
-				} catch (InterruptedException ignored) {
-				}
+				lock.wait();
 			}
 		}
 	}
@@ -100,21 +100,23 @@ public abstract class DatabaseBase implements Database {
 	}
 
 	@Override
-	public void sync(Consumer<Connection> consumer) throws SQLException {
+	public void sync(Consumer<Connection> consumer) throws SQLException, InterruptedException {
 		checkDisconnected();
-		try (Connection connection = getConnection()) {
-			consumer.accept(connection);
-		}
+		Connection connection = getConnection();
+		consumer.accept(connection);
+		freeConnection(connection);
 	}
 
 	@Override
 	public void async(Consumer<Connection> consumer) throws SQLException {
 		checkDisconnected();
 		asyncTask(() -> {
-			try (Connection connection = getConnection()) {
+			try {
+				Connection connection = getConnection();
 				consumer.accept(connection);
-			} catch (SQLException e) {
-				throw new RuntimeException(e);
+				freeConnection(connection);
+			} catch (SQLException | InterruptedException e) {
+				e.printStackTrace();
 			}
 		});
 	}
@@ -127,8 +129,8 @@ public abstract class DatabaseBase implements Database {
 
 	protected void asyncTask(Runnable runnable) {
 		if (threadPool == null)
-			threadPool = maxConnectionPoolSize < 0 ? Executors.newCachedThreadPool()
-					: Executors.newFixedThreadPool(maxConnectionPoolSize);
+			threadPool = maxPoolSize < 0 ? Executors.newCachedThreadPool()
+					: Executors.newFixedThreadPool(maxPoolSize);
 		threadPool.execute(runnable);
 	}
 

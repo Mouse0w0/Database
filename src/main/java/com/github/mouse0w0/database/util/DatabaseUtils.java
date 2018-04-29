@@ -2,7 +2,7 @@ package com.github.mouse0w0.database.util;
 
 import java.sql.*;
 
-public class SQLUtils {
+public class DatabaseUtils {
 
 	public static void requireDriver(String name) throws SQLException {
 		try {
