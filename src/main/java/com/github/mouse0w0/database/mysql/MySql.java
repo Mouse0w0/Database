@@ -3,14 +3,8 @@ package com.github.mouse0w0.database.mysql;
 import java.sql.*;
 import com.github.mouse0w0.database.Column;
 import com.github.mouse0w0.database.internal.DatabaseBase;
-import com.github.mouse0w0.database.util.DatabaseUtils;
 
 public class MySql extends DatabaseBase {
-	
-	public static MySql create(String url, String user, String password) throws SQLException {
-		DatabaseUtils.requireDriver("com.mysql.jdbc.Driver");
-		return new MySql(url, user, password);
-	}
 	
 	private final String url;
 	private final String user;
@@ -80,7 +74,13 @@ public class MySql extends DatabaseBase {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS ? (?)")) {
 			statement.setString(0, schema + "." + table);
-			statement.setString(1, ""); // TODO
+			StringBuilder sb = new StringBuilder(" ");
+			for (int i = 0; i < columns.length; i++) {
+				if(i != 0)
+					sb.append(",");
+				sb.append(columns[i]);
+			}
+			statement.setString(1, sb.toString());
 			return statement.execute();
 		} finally {
 			freeConnection(connection);
@@ -113,7 +113,7 @@ public class MySql extends DatabaseBase {
 	public boolean deleteTable(String schema, String table) throws SQLException, InterruptedException {
 		Connection connection = getConnection();
 		try (PreparedStatement statement = connection.prepareStatement("DROP TABLE ?")) {
-			statement.setString(0, schema);
+			statement.setString(0, schema + "." + table);
 			return statement.execute();
 		} finally {
 			freeConnection(connection);

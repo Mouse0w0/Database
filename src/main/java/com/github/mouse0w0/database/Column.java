@@ -24,7 +24,12 @@ public class Column {
 		return rules;
 	}
 	
-	public String toSqlCommand() {
-		return null;
+	public String toSQLCommand() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(name).append(" ").append(dataType.toSQLCommand());
+		for (ColumnRule rule : rules) {
+			sb.append(" ").append(rule.toSQLCommand());
+		}
+		return sb.toString();
 	}
 }
